@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Derivación de Gestiones — Grupo Defensa</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#0b0e16;--bg2:#111520;--bg3:#181d2c;--bg4:#1f2538;--border:#252e47;--border2:#34405e;--blue:#5b9cf6;--blue-dim:#162040;--blue-glow:rgba(91,156,246,.12);--green:#34d399;--green-dim:#0a2e20;--amber:#f59e0b;--amber-dim:#2e1f00;--red:#f87171;--red-dim:#2e1010;--purple:#a78bfa;--purple-dim:#1e1540;--text:#dce6f5;--text2:#8a9bb8;--text3:#404e6a;--cartera:#818cf8;--cartera-dim:#18164a;--masivo:#34d399;--masivo-dim:#082e20;--regiones:#f472b6;--regiones-dim:#2e0a20;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px}
+.topbar-logo{font-size:13px;font-weight:600;color:var(--blue);letter-spacing:.06em;text-transform:uppercase}
+.topbar-badge{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--blue-dim);color:var(--blue);letter-spacing:.04em}
+.topbar-badge-role{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--purple-dim);color:var(--purple);letter-spacing:.04em}
+.topbar-sep{flex:1}
+.topbar-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.err{background:var(--red)}
+.sync-label{font-size:11px;color:var(--text3)}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:2px}
+.nav-section{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:16px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--blue-glow);color:var(--blue);border-left-color:var(--blue)}
+.nav-icon{width:15px;height:15px;opacity:.7;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 20px;font-size:11px;color:var(--text3);border-top:1px solid var(--border)}
+.main{overflow-y:auto;padding:28px;background:var(--bg)}
+.page{display:none}.page.active{display:block}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px}
+.page-title{font-size:20px;font-weight:600}
+.page-sub{font-size:13px;color:var(--text2);margin-top:3px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--blue))}
+.stat-label{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:600;font-family:'DM Mono',monospace;line-height:1}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:6px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-header{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-title{font-size:13px;font-weight:600}
+.card-body{padding:20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase}
+.form-control{background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;transition:border .15s;width:100%}
+.form-control:focus{border-color:var(--blue)}
+.form-control option{background:var(--bg3)}
+.extra-field{display:none;animation:fi .2s ease}
+.extra-field.visible{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.who-am-i-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:20px}
+.who-am-i-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.who-am-i-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.who-btn{padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:left;line-height:1.4}
+.who-btn:hover{border-color:var(--border2);color:var(--text)}
+.who-btn.selected{background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+.who-btn .who-name{font-weight:600;display:block}
+.who-btn .who-role{font-size:10px;opacity:.7;display:block;margin-top:1px}
+.tipo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.tipo-btn{padding:11px 8px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;line-height:1.3}
+.tipo-btn:hover{border-color:var(--border2);color:var(--text)}
+.tipo-btn.sel-mandato{background:var(--cartera-dim);border-color:var(--cartera);color:var(--cartera)}
+.tipo-btn.sel-compraventa{background:#082e2e;border-color:#2dd4bf;color:#2dd4bf}
+.tipo-btn.sel-resciliacion{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.tipo-btn.sel-transaccion{background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+.seg-toggle{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg-btn{padding:9px 6px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+.seg-btn:hover{border-color:var(--border2);color:var(--text)}
+.seg-btn.ac{background:var(--cartera-dim);border-color:var(--cartera);color:var(--cartera)}
+.seg-btn.am{background:var(--masivo-dim);border-color:var(--masivo);color:var(--masivo)}
+.seg-btn.ar{background:var(--regiones-dim);border-color:var(--regiones);color:var(--regiones)}
+.subseg-row{display:none;gap:8px;margin-top:8px;align-items:center}
+.subseg-row.visible{display:flex}
+.subseg-btn{flex:1;padding:7px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center}
+.subseg-btn:hover{border-color:var(--border2);color:var(--text)}
+.subseg-btn.ac{background:var(--cartera-dim);border-color:var(--cartera);color:var(--cartera)}
+.subseg-btn.am{background:var(--masivo-dim);border-color:var(--masivo);color:var(--masivo)}
+.btn-primary{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
+.btn-primary:hover{background:#6fa8f9;transform:translateY(-1px)}
+.btn-primary:disabled{background:var(--bg4);color:var(--text3);cursor:not-allowed;transform:none}
+.btn-sm{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-sm:hover{border-color:var(--border2);color:var(--text)}
+.btn-email{width:100%;padding:10px;background:transparent;color:var(--green);border:1px solid var(--green);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-email:hover{background:var(--green-dim)}
+.result-box{display:none;background:var(--bg3);border:1px solid var(--green);border-radius:var(--r);padding:16px;margin-top:16px;animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.result-label{font-size:10px;font-weight:600;color:var(--green);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.result-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.result-person{background:var(--bg4);border-radius:8px;padding:11px 13px;border:1px solid var(--border)}
+.result-person.is-me{border-color:var(--purple);background:var(--purple-dim)}
+.result-person.is-me .result-role{color:var(--purple)}
+.result-role{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.result-name{font-size:14px;font-weight:600}
+.result-task{font-size:11px;color:var(--text2);margin-top:2px}
+.draft-section{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+.draft-title{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px}
+.draft-field{margin-bottom:10px}
+.draft-label{font-size:10px;color:var(--text3);margin-bottom:4px}
+.draft-value{font-size:12px;color:var(--text);background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:8px 10px;line-height:1.7;white-space:pre-wrap;word-break:break-word;font-family:'DM Mono',monospace}
+.draft-dates{display:grid;gap:8px;margin-bottom:10px}
+.draft-dates.one{grid-template-columns:1fr 1fr}
+.date-box{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.date-box-label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.date-box-val{font-size:13px;font-weight:600;color:var(--amber);font-family:'DM Mono',monospace}
+.date-box-input input{background:transparent;border:none;outline:none;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;font-weight:600;width:100%;cursor:pointer}
+.date-box-input input::-webkit-calendar-picker-indicator{filter:invert(0.6)}
+.result-meta{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text3);padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;margin-top:10px}
+.chip{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.chip-cartera{background:var(--cartera-dim);color:var(--cartera)}
+.chip-masivo{background:var(--masivo-dim);color:var(--masivo)}
+.chip-regiones{background:var(--regiones-dim);color:var(--regiones)}
+.chip-urgente{background:var(--amber-dim);color:var(--amber)}
+.chip-normal{background:var(--bg4);color:var(--text2)}
+.chip-redistribuido{background:#2e1a08;color:#fb923c;font-size:9px}
+.chip-sucursal{background:#082030;color:#38bdf8}
+.copy-btn{margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{border-color:var(--blue);color:var(--blue)}
+.warn-box{display:none;background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:var(--amber);line-height:1.5}
+.info-box{display:none;background:#082030;border:1px solid #38bdf8;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:#7dd3fc;line-height:1.5}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.member-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);transition:opacity .2s}
+.member-row:last-child{border-bottom:none}
+.member-row.blocked{opacity:.4}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-role{font-size:11px;color:var(--text3)}
+.bar-wrap{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;flex-shrink:0}
+.bar-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.count{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);min-width:18px;text-align:right;flex-shrink:0}
+.blocked-badge{font-size:9px;font-weight:600;color:var(--red);background:var(--red-dim);padding:1px 6px;border-radius:10px;flex-shrink:0}
+.hist-item{padding:11px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;animation:fi .2s ease}
+.hist-item:last-child{border-bottom:none}
+.hist-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:24px;margin-top:2px}
+.hist-ref{font-size:13px;font-weight:500;margin-bottom:3px}
+.hist-pair{font-size:12px;color:var(--text2)}
+.hist-by{font-size:10px;color:var(--purple);margin-top:2px}
+.hist-sucursal{font-size:11px;color:#38bdf8;margin-top:2px}
+.hist-meta{text-align:right}
+.hist-date{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.hist-chips{display:flex;gap:4px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--text2)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Conectando con Firebase…</div>
+</div>
+
+<div class="shell">
+<header class="topbar">
+  <span class="topbar-logo">Derivación · Gestiones</span>
+  <span class="topbar-badge">Grupo Defensa</span>
+  <span class="topbar-badge-role" id="topbar-role-badge">Legal &amp; Coordinación</span>
+  <span class="topbar-sep"></span>
+  <div class="sync-dot" id="sync-dot"></div>
+  <span class="sync-label" id="sync-label">Conectando…</span>
+  <span class="topbar-date" id="top-date"></span>
+</header>
+
+<nav class="sidebar">
+  <div class="nav-section">Principal</div>
+  <div class="nav-item active" onclick="navTo('derivar',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5h6A1.5 1.5 0 0112.5 5v5.5a.5.5 0 001 0V5a2.5 2.5 0 00-2.5-2.5H5a.5.5 0 000 1z"/><path d="M3 3a.5.5 0 01.354.146l4 4a.5.5 0 010 .708l-4 4A.5.5 0 012.5 11.5V9.207l-2.146 2.147a.5.5 0 01-.708-.708l3-3a.5.5 0 010-.708l-3-3a.5.5 0 01.708-.708L2.5 5.793V3.5A.5.5 0 013 3z"/></svg>
+    Derivar gestión
+  </div>
+  <div class="nav-item" onclick="navTo('equipo',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zM2 14s-1 0-1-1 1-4 7-4 7 3 7 4-1 1-1 1H2z"/></svg>
+    Ver equipo
+  </div>
+  <div class="nav-item" onclick="navTo('historial',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h11A1.5 1.5 0 0115 2.5v11a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 13.5v-11zm2 .5v9h10V3H3zm2 2h6v1H5V5zm0 3h6v1H5V8zm0 3h4v1H5v-1z"/></svg>
+    Historial
+  </div>
+  <div class="sidebar-footer">v1.0 · Firebase sync</div>
+</nav>
+
+<main class="main">
+
+  <!-- DERIVAR -->
+  <div class="page active" id="page-derivar">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Derivar gestión</div>
+        <div class="page-sub">Datos sincronizados en tiempo real · la carga es compartida con todo el equipo</div>
+      </div>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
+      <div>
+        <div class="who-am-i-box">
+          <div class="who-am-i-label">¿Quién estás derivando?</div>
+          <div class="who-am-i-grid" id="who-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Nueva gestión</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Tipo de gestión</label>
+              <div class="tipo-grid">
+                <button class="tipo-btn sel-mandato" id="tbtn-Mandato" onclick="selTipo('Mandato',this)">📄 Mandato</button>
+                <button class="tipo-btn" id="tbtn-Compraventa" onclick="selTipo('Compraventa',this)">🏠 Compraventa</button>
+                <button class="tipo-btn" id="tbtn-Resciliacion" onclick="selTipo('Resciliacion',this)">↩️ Resciliación</button>
+                <button class="tipo-btn" id="tbtn-Transaccion" onclick="selTipo('Transaccion',this)">🤝 Transacción</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sucursal</label>
+              <select class="form-control" id="f-sucursal">
+                <option value="">— Seleccionar —</option>
+                <option>Arica</option><option>Iquique</option><option>Antofagasta</option>
+                <option>La Serena</option><option>Copiapó</option><option>Viña del Mar</option>
+                <option>Los Andes</option><option>Santiago</option><option>Rancagua</option>
+                <option>Curicó</option><option>Talca</option><option>Chillán</option>
+                <option>Concepción</option><option>Temuco</option><option>Valdivia</option>
+                <option>Osorno</option><option>Puerto Montt</option><option>Punta Arenas</option>
+              </select>
+            </div>
+            <div class="extra-field visible" id="ef-enviar-a">
+              <label class="form-label">Enviar mandato a</label>
+              <select class="form-control" id="f-enviar-a" onchange="rebuildPreview()"><option value="">— Seleccionar —</option></select>
+            </div>
+            <div class="extra-field" id="ef-ubicado">
+              <label class="form-label">Ubicado en</label>
+              <input type="text" class="form-control" id="f-ubicado" placeholder="Dirección o descripción..." oninput="rebuildPreview()">
+            </div>
+            <div class="extra-field" id="ef-fecha-inmueble">
+              <label class="form-label">Fecha de transferencia del inmueble</label>
+              <input type="text" class="form-control" id="f-fecha-inmueble" placeholder="Ej: 15 de marzo de 2024..." oninput="rebuildPreview()">
+            </div>
+            <div class="extra-field" id="ef-honorarios">
+              <label class="form-label">Devolución de honorarios ($)</label>
+              <input type="text" class="form-control" id="f-honorarios" placeholder="Monto a devolver..." oninput="rebuildPreview()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Segmento</label>
+              <div class="seg-toggle">
+                <button class="seg-btn ac" id="btn-c" onclick="selSeg('Cartera')">Cartera</button>
+                <button class="seg-btn"    id="btn-m" onclick="selSeg('Masivo')">Masivo</button>
+                <button class="seg-btn"    id="btn-r" onclick="selSeg('Regiones')">Regiones</button>
+              </div>
+              <div class="subseg-row" id="subseg-row">
+                <span style="font-size:11px;color:var(--text3);white-space:nowrap">Coord. de:</span>
+                <button class="subseg-btn ac" id="subbtn-c" onclick="selSubseg('Cartera')">Cartera</button>
+                <button class="subseg-btn"    id="subbtn-m" onclick="selSubseg('Masivo')">Masivo</button>
+              </div>
+            </div>
+            <div class="warn-box" id="warn-fernando">Fernando Zagal está bloqueado.</div>
+            <div class="warn-box" id="warn-no-user">Selecciona quién está derivando antes de continuar.</div>
+            <div class="info-box" id="info-redist"></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Referencia</label>
+                <input type="text" class="form-control" id="f-ref" placeholder="Ej: CV-2025-089">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Prioridad</label>
+                <select class="form-control" id="f-prio"><option>Normal</option><option>Urgente</option></select>
+              </div>
+            </div>
+            <button class="btn-primary" id="btn-derivar" onclick="derivar()">Derivar gestión</button>
+
+            <div class="result-box" id="result-box">
+              <div class="result-label">Pareja asignada</div>
+              <div class="result-pair">
+                <div class="result-person" id="rp-ab"><div class="result-role">Redacta el contrato</div><div class="result-name" id="r-ab">—</div><div class="result-task" id="r-ab-c"></div></div>
+                <div class="result-person" id="rp-co"><div class="result-role">Documentos y notaría</div><div class="result-name" id="r-co">—</div><div class="result-task" id="r-co-c"></div></div>
+              </div>
+              <div class="draft-section">
+                <div class="draft-title">Borrador de correo</div>
+                <div class="draft-field"><div class="draft-label">Destinatarios</div><div class="draft-value" id="d-to" style="font-size:11px;font-family:'DM Sans',sans-serif"></div></div>
+                <div class="draft-field"><div class="draft-label">Asunto</div><div class="draft-value" id="d-subject" style="font-family:'DM Sans',sans-serif"></div></div>
+                <div class="draft-field"><div class="draft-label">Cuerpo del mensaje</div><div class="draft-value" id="d-body"></div></div>
+                <div class="draft-dates one" id="d-dates-wrap"></div>
+                <button class="btn-email" onclick="abrirBorrador()">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.05 3.555A2 2 0 012 2h12a2 2 0 011.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zM6.761 8.83l-6.57 4.027A2 2 0 002 14h12a2 2 0 001.808-1.144l-6.57-4.027L8 9.586l-1.239-.757zM16 4.697l-5.803 3.546L16 11.801V4.697z"/></svg>
+                  Abrir borrador en Outlook
+                </button>
+              </div>
+              <div class="result-meta">
+                <span id="r-ref"></span><span id="r-cseg"></span><span id="r-cprio"></span><span id="r-csuc"></span><span id="r-credist"></span><span id="r-cby"></span>
+                <button class="copy-btn" onclick="copiar()">Copiar texto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Carga actual del equipo</span>
+          <span class="btn-sm" onclick="navTo('equipo',document.querySelectorAll('.nav-item')[1])">Ver detalle →</span>
+        </div>
+        <div class="card-body" id="carga-live" style="padding:14px 18px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQUIPO -->
+  <div class="page" id="page-equipo">
+    <div class="page-header">
+      <div><div class="page-title">Equipo</div><div class="page-sub">Carga en tiempo real — actualizada con cada derivación del equipo</div></div>
+    </div>
+    <div class="team-grid" id="team-grid"></div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="page" id="page-historial">
+    <div class="page-header">
+      <div><div class="page-title">Historial</div><div class="page-sub">Registro compartido de todo el equipo</div></div>
+      <button class="btn-sm" onclick="exportCSV()">Exportar CSV</button>
+    </div>
+    <div class="card"><div class="card-body" id="hist-list" style="padding:8px 20px"></div></div>
+  </div>
+
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = { databaseURL: "https://grupo-defensa-b6b40-default-rtdb.firebaseio.com" };
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+function fbRef(path){ return ref(db,path); }
+async function fbGet(path){ const s=await get(fbRef(path)); return s.exists()?s.val():null; }
+async function fbSet(path,val){ await set(fbRef(path),val); }
+
+const FERIADOS=new Set(['2025-01-01','2025-04-18','2025-04-19','2025-05-01','2025-05-21','2025-06-20','2025-06-29','2025-07-16','2025-08-15','2025-09-18','2025-09-19','2025-10-12','2025-10-31','2025-11-01','2025-12-08','2025-12-25','2026-01-01','2026-04-03','2026-04-04','2026-05-01','2026-05-21','2026-06-19','2026-06-29','2026-07-16','2026-08-15','2026-09-18','2026-09-19','2026-10-12','2026-10-31','2026-11-01','2026-12-08','2026-12-25']);
+function addHabil(date,days){let d=new Date(date),added=0;while(added<days){d.setDate(d.getDate()+1);const dow=d.getDay(),iso=d.toISOString().slice(0,10);if(dow!==0&&dow!==6&&!FERIADOS.has(iso))added++;}return d;}
+function fmtDate(d){return d.toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});}
+function fmtDateInput(d){return d.toISOString().slice(0,10);}
+
+const COLORS=[{bg:'#162040',tx:'#5b9cf6'},{bg:'#18164a',tx:'#818cf8'},{bg:'#082e20',tx:'#34d399'},{bg:'#2e1f00',tx:'#f59e0b'},{bg:'#1e1540',tx:'#a78bfa'},{bg:'#082030',tx:'#38bdf8'},{bg:'#2e1a08',tx:'#fb923c'},{bg:'#0a2e1a',tx:'#4ade80'},{bg:'#2e1010',tx:'#f87171'},{bg:'#1a1a3d',tx:'#a5b4fc'},{bg:'#2e2a08',tx:'#fbbf24'},{bg:'#082e2e',tx:'#2dd4bf'}];
+const DEST_DEFAULT=['Paula Araya','Camila Guajardo','Max Sinclair','Camila Martinez','Magdalena Hetreau','Bárbara Watson','Tania Olivera','Maria Ignacia Guerrero','Macarena Castillo'];
+
+let equipo=[], historial=[], destinatarios=[];
+let segActual='Cartera', subsegActual='Cartera', tipoActual='Mandato', lastEntry=null, usuarioActual=null;
+
+function ini(n){return n.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();}
+function now(){return new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});}
+function getFernando(){return equipo.find(m=>m.esRegiones);}
+function setSyncOk(){document.getElementById('sync-dot').className='sync-dot ok';document.getElementById('sync-label').textContent='Sincronizado';}
+function setSyncErr(){document.getElementById('sync-dot').className='sync-dot err';document.getElementById('sync-label').textContent='Sin conexión';}
+
+async function save(){
+  try{ await fbSet('equipo',equipo); await fbSet('historial',historial); await fbSet('destinatarios',destinatarios); setSyncOk(); }
+  catch(e){ setSyncErr(); }
+}
+
+async function initData(){
+  try{
+    const [eq,hist,dest]=await Promise.all([fbGet('equipo'),fbGet('historial'),fbGet('destinatarios')]);
+    equipo=eq?(Array.isArray(eq)?eq:Object.values(eq)):[];
+    historial=hist?(Array.isArray(hist)?hist:Object.values(hist)):[];
+    destinatarios=dest?(Array.isArray(dest)?dest:Object.values(dest)):[...DEST_DEFAULT];
+    equipo.forEach((m,i)=>{if(!m.color)m.color=COLORS[i%COLORS.length];});
+    setSyncOk();
+  }catch(e){ setSyncErr(); equipo=[]; historial=[]; destinatarios=[...DEST_DEFAULT]; }
+  document.getElementById('loading-overlay').style.display='none';
+  renderStats(); renderLive(); renderWhoGrid(); refreshEnviarASelect(); checkWarns();
+}
+
+function startRealtime(){
+  onValue(fbRef('equipo'),snap=>{
+    if(!snap.exists())return;
+    const d=snap.val(); equipo=Array.isArray(d)?d:Object.values(d);
+    equipo.forEach((m,i)=>{if(!m.color)m.color=COLORS[i%COLORS.length];});
+    renderStats(); renderLive(); renderWhoGrid();
+    const pg=document.querySelector('.page.active');
+    if(pg&&pg.id==='page-equipo') renderEquipo();
+    setSyncOk();
+  },()=>setSyncErr());
+  onValue(fbRef('historial'),snap=>{
+    if(!snap.exists())return;
+    const d=snap.val(); historial=Array.isArray(d)?d:Object.values(d);
+    renderStats();
+    const pg=document.querySelector('.page.active');
+    if(pg&&pg.id==='page-historial') renderHist();
+  });
+  onValue(fbRef('destinatarios'),snap=>{
+    if(!snap.exists())return;
+    const d=snap.val(); destinatarios=Array.isArray(d)?d:Object.values(d);
+    refreshEnviarASelect();
+  });
+}
+
+// ── Quién soy ─────────────────────────────────────────────────────────────────
+function renderWhoGrid(){
+  const grid=document.getElementById('who-grid');
+  const legales=equipo.filter(m=>m.rol==='Abogado/a'||m.rol==='Coordinadora');
+  grid.innerHTML=legales.map(m=>{
+    const sel=usuarioActual&&usuarioActual.nombre===m.nombre;
+    return`<button class="who-btn${sel?' selected':''}" onclick="selUsuario('${m.nombre}')"><span class="who-name">${m.nombre}</span><span class="who-role">${m.rol} · ${m.seg}</span></button>`;
+  }).join('');
+}
+window.selUsuario=function(nombre){
+  usuarioActual=equipo.find(m=>m.nombre===nombre)||null;
+  renderWhoGrid();
+  const badge=document.getElementById('topbar-role-badge');
+  badge.textContent=usuarioActual?usuarioActual.nombre.split(' ')[0]+' · '+usuarioActual.rol:'Legal & Coordinación';
+  document.getElementById('warn-no-user').style.display='none';
+};
+
+// ── Tipo ──────────────────────────────────────────────────────────────────────
+const TIPO_FIELDS={Mandato:['ef-enviar-a'],Compraventa:['ef-ubicado'],Resciliacion:['ef-fecha-inmueble'],Transaccion:['ef-honorarios']};
+const TIPO_CLS={Mandato:'sel-mandato',Compraventa:'sel-compraventa',Resciliacion:'sel-resciliacion',Transaccion:'sel-transaccion'};
+window.selTipo=function(tipo,btn){
+  tipoActual=tipo;
+  document.querySelectorAll('.tipo-btn').forEach(b=>b.className='tipo-btn');
+  btn.className='tipo-btn '+TIPO_CLS[tipo];
+  ['ef-enviar-a','ef-ubicado','ef-fecha-inmueble','ef-honorarios'].forEach(id=>{
+    document.getElementById(id).className='extra-field'+((TIPO_FIELDS[tipo]||[]).includes(id)?' visible':'');
+  });
+  rebuildPreview();
+};
+
+// ── Segmento ──────────────────────────────────────────────────────────────────
+window.selSeg=function(s){
+  segActual=s;
+  document.getElementById('btn-c').className='seg-btn'+(s==='Cartera'?' ac':'');
+  document.getElementById('btn-m').className='seg-btn'+(s==='Masivo'?' am':'');
+  document.getElementById('btn-r').className='seg-btn'+(s==='Regiones'?' ar':'');
+  document.getElementById('subseg-row').className='subseg-row'+(s==='Regiones'?' visible':'');
+  checkWarns();
+};
+window.selSubseg=function(s){
+  subsegActual=s;
+  document.getElementById('subbtn-c').className='subseg-btn'+(s==='Cartera'?' ac':'');
+  document.getElementById('subbtn-m').className='subseg-btn'+(s==='Masivo'?' am':'');
+};
+function checkWarns(){
+  const f=getFernando();
+  document.getElementById('warn-fernando').style.display=(segActual==='Regiones'&&f&&f.bloqueado)?'block':'none';
+}
+
+// ── Borrador ──────────────────────────────────────────────────────────────────
+function buildBody(tipo,ab,co,p){
+  const dest=p.enviarA||'____________',ubic=p.ubicado||'____________',fInm=p.fechaInmueble||'____________',hon=p.honorarios||'$____________';
+  if(tipo==='Mandato')return`${ab}:\n• Redactar Mandato judicial de cliente a MEV. Cuando lo tengamos enviar a ${dest}\n\n${co}, agregar a tareas de Legal por favor.\n\nPlazo: ${p.plazo3} / Plazo FATAL: ${p.fatal||'[Por definir]'}`;
+  if(tipo==='Compraventa')return`${ab}, redactar lo siguiente:\n• CVI de cliente a ZZZ (ubicado en ${ubic})\n\n${co}, agregar a tareas de CT por favor.\n\nLlamada: ${p.plazo3}\nControl: ${p.plazo15}`;
+  if(tipo==='Resciliacion')return`${ab}, redactar lo siguiente:\n• Resciliación o CVI de 3° a cliente, respecto de inmueble que transferimos el ${fInm}\n\n${co}, agregar a Tareas por favor.\n\nLlamada: ${p.plazo3}\nControl: ${p.plazo15}`;
+  if(tipo==='Transaccion')return`${ab}, redactar lo siguiente:\n• Transacción entre cliente y MEV, respecto del servicio de renegociación extra judicial (usar Modelo que usamos para eso)\nAdemás agregar una cláusula que renunciamos a cualquier patrocinio y poder que pudiéremos tener.\nDevolución de honorarios es total, por ${hon}\nPreviamente enviar borrador a MEV y a mi.\n\n${co}, agregar a Tareas.\n\nPlazo: ${p.plazo3}`;
+  return '';
+}
+function buildDates(tipo,hoy){
+  const p3=fmtDate(addHabil(hoy,3)),p15=fmtDate(addHabil(hoy,15)),p3v=fmtDateInput(addHabil(hoy,3));
+  if(tipo==='Mandato')return{html:`<div class="date-box"><div class="date-box-label">Plazo (3 días hábiles)</div><div class="date-box-val">${p3}</div></div><div class="date-box date-box-input"><div class="date-box-label">Plazo FATAL</div><input type="date" id="d-fatal" value="${p3v}" onchange="rebuildPreview()"></div>`,cols:'one',p3,p15};
+  if(tipo==='Compraventa'||tipo==='Resciliacion')return{html:`<div class="date-box"><div class="date-box-label">Llamada (3 días hábiles)</div><div class="date-box-val">${p3}</div></div><div class="date-box"><div class="date-box-label">Control (15 días hábiles)</div><div class="date-box-val">${p15}</div></div>`,cols:'one',p3,p15};
+  if(tipo==='Transaccion')return{html:`<div class="date-box"><div class="date-box-label">Plazo (3 días hábiles)</div><div class="date-box-val">${p3}</div></div>`,cols:'one',p3,p15};
+  return{html:'',cols:'one',p3,p15};
+}
+function getParams(tipo,dates){
+  return{enviarA:document.getElementById('f-enviar-a').value,ubicado:document.getElementById('f-ubicado').value.trim(),fechaInmueble:document.getElementById('f-fecha-inmueble').value.trim(),honorarios:document.getElementById('f-honorarios').value.trim(),plazo3:dates.p3,plazo15:dates.p15,fatal:(()=>{const el=document.getElementById('d-fatal');if(!el)return'';const v=el.value;return v?new Date(v+'T12:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'}):''})()};
+}
+window.rebuildPreview=function(){
+  if(!lastEntry)return;
+  const dates=buildDates(tipoActual,new Date());
+  document.getElementById('d-body').textContent=buildBody(tipoActual,lastEntry.abogado,lastEntry.coord,getParams(tipoActual,dates));
+};
+
+// ── Distribución ──────────────────────────────────────────────────────────────
+function pickPerson(pool,rol){
+  const avail=pool.filter(m=>!m.bloqueado);
+  if(avail.length>=2){const mn=Math.min(...avail.map(m=>m.contratos));const c=avail.filter(m=>m.contratos===mn);return{persona:c[Math.floor(Math.random()*c.length)],redistribuido:false};}
+  if(avail.length===1){const todos=equipo.filter(m=>m.rol===rol&&!m.bloqueado);if(todos.length===1)return{persona:todos[0],redistribuido:false};const mn=Math.min(...todos.map(m=>m.contratos));const c=todos.filter(m=>m.contratos===mn);return{persona:c[Math.floor(Math.random()*c.length)],redistribuido:true};}
+  const todos=equipo.filter(m=>m.rol===rol&&!m.bloqueado);if(!todos.length)return{persona:null,redistribuido:false};
+  const mn=Math.min(...todos.map(m=>m.contratos));const c=todos.filter(m=>m.contratos===mn);return{persona:c[Math.floor(Math.random()*c.length)],redistribuido:true};
+}
+
+window.derivar=async function(){
+  if(!usuarioActual){document.getElementById('warn-no-user').style.display='block';return;}
+  const tipo=tipoActual, ref2=document.getElementById('f-ref').value.trim(), prio=document.getElementById('f-prio').value, sucursal=document.getElementById('f-sucursal').value;
+  let ab=null,co=null,segLabel=segActual,redistAb=false,redistCo=false;
+  if(segActual==='Regiones'){
+    const f=getFernando();if(!f||f.bloqueado){alert('Fernando Zagal está bloqueado.');return;}
+    ab=f;const coRes=pickPerson(equipo.filter(m=>m.seg===subsegActual&&m.rol==='Coordinadora'),'Coordinadora');
+    if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
+    co=coRes.persona;redistCo=coRes.redistribuido;segLabel='Regiones · '+subsegActual;
+  } else {
+    const abRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Abogado/a'),'Abogado/a');
+    const coRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Coordinadora'),'Coordinadora');
+    if(!abRes.persona){alert('No hay abogados/as disponibles.');return;}
+    if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
+    ab=abRes.persona;redistAb=abRes.redistribuido;co=coRes.persona;redistCo=coRes.redistribuido;
+  }
+  const btn=document.getElementById('btn-derivar');
+  btn.disabled=true; btn.textContent='Guardando…';
+  ab.contratos++; co.contratos++;
+  const hoy=new Date(), datesInfo=buildDates(tipo,hoy);
+  const extras={enviarA:document.getElementById('f-enviar-a').value,ubicado:document.getElementById('f-ubicado').value.trim(),fechaInmueble:document.getElementById('f-fecha-inmueble').value.trim(),honorarios:document.getElementById('f-honorarios').value.trim()};
+  const e={abogado:ab.nombre,coord:co.nombre,tipo,seg:segLabel,prio,ref:ref2,sucursal,fecha:now(),correoAb:ab.correo,correoCo:co.correo,plazo3:datesInfo.p3,plazo15:datesInfo.p15,redistAbogado:redistAb,redistCoord:redistCo,derivadoPor:usuarioActual.nombre,...extras};
+  historial.unshift(e); lastEntry=e;
+  try{ await save(); }catch(err){}
+  btn.disabled=false; btn.textContent='Derivar gestión';
+
+  document.getElementById('r-ab').textContent=ab.nombre;
+  document.getElementById('r-ab-c').textContent=ab.contratos+' contratos en total'+(redistAb?' · redistribuido':'');
+  document.getElementById('r-co').textContent=co.nombre;
+  document.getElementById('r-co-c').textContent=co.contratos+' contratos en total'+(redistCo?' · redistribuido':'');
+  document.getElementById('rp-ab').className='result-person'+(ab.nombre===usuarioActual.nombre?' is-me':'');
+  document.getElementById('rp-co').className='result-person'+(co.nombre===usuarioActual.nombre?' is-me':'');
+  document.getElementById('r-ref').textContent=ref2||'Sin referencia';
+  const segKey=segActual==='Regiones'?'regiones':segActual.toLowerCase();
+  document.getElementById('r-cseg').innerHTML=`<span class="chip chip-${segKey}">${segLabel}</span>`;
+  document.getElementById('r-cprio').innerHTML=`<span class="chip chip-${prio.toLowerCase()}">${prio}</span>`;
+  document.getElementById('r-csuc').innerHTML=sucursal?`<span class="chip chip-sucursal">${sucursal}</span>`:'';
+  document.getElementById('r-credist').innerHTML=(redistAb||redistCo)?'<span class="chip chip-redistribuido">Redistribuido</span>':'';
+  document.getElementById('r-cby').innerHTML=`<span style="font-size:10px;color:var(--purple)">por ${usuarioActual.nombre}</span>`;
+  const dw=document.getElementById('d-dates-wrap');
+  dw.className='draft-dates '+datesInfo.cols; dw.innerHTML=datesInfo.html;
+  const params=getParams(tipo,datesInfo);
+  document.getElementById('d-to').textContent=`${ab.correo}; ${co.correo}`;
+  document.getElementById('d-subject').textContent=`[${tipo}${sucursal?' · '+sucursal:''}${ref2?' · '+ref2:''}] — ${now()}`;
+  document.getElementById('d-body').textContent=buildBody(tipo,ab.nombre,co.nombre,params);
+  document.getElementById('result-box').style.display='block';
+  document.getElementById('f-ref').value='';
+  const ir=document.getElementById('info-redist');
+  ir.style.display=(redistAb||redistCo)?'block':'none';
+  if(redistAb||redistCo) ir.textContent='ℹ️ Hubo redistribución por bloqueo o desequilibrio de carga.';
+  renderStats(); renderLive();
+};
+
+window.abrirBorrador=function(){
+  if(!lastEntry)return;
+  const e=lastEntry, dates=buildDates(e.tipo,new Date()), params=getParams(e.tipo,dates);
+  params.enviarA=params.enviarA||e.enviarA||'____________'; params.ubicado=params.ubicado||e.ubicado||'____________';
+  params.fechaInmueble=params.fechaInmueble||e.fechaInmueble||'____________'; params.honorarios=params.honorarios||e.honorarios||'$____________';
+  const asunto=`[${e.tipo}${e.sucursal?' · '+e.sucursal:''}${e.ref?' · '+e.ref:''}] — ${e.fecha}`;
+  window.location.href=`mailto:${encodeURIComponent(e.correoAb)};${encodeURIComponent(e.correoCo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(buildBody(e.tipo,e.abogado,e.coord,params).replace(/\n/g,'\r\n'))}`;
+};
+window.copiar=function(){
+  if(!lastEntry)return;
+  const e=lastEntry, dates=buildDates(e.tipo,new Date()), params=getParams(e.tipo,dates);
+  params.enviarA=params.enviarA||e.enviarA||'____________'; params.ubicado=params.ubicado||e.ubicado||'____________';
+  params.fechaInmueble=params.fechaInmueble||e.fechaInmueble||'____________'; params.honorarios=params.honorarios||e.honorarios||'$____________';
+  const t=`Derivado por: ${e.derivadoPor||'—'}\nTipo: ${e.tipo}${e.sucursal?' · '+e.sucursal:''}\nReferencia: ${e.ref||'—'} · ${e.seg} · ${e.prio}\nFecha: ${e.fecha}\n\n${buildBody(e.tipo,e.abogado,e.coord,params)}`;
+  navigator.clipboard.writeText(t).then(()=>{const b=document.querySelector('.copy-btn');b.textContent='Copiado ✓';setTimeout(()=>b.textContent='Copiar texto',2000);});
+};
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+window.navTo=function(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='equipo') renderEquipo();
+  if(id==='historial') renderHist();
+  if(id==='derivar'){renderStats();renderLive();renderWhoGrid();checkWarns();}
+};
+
+// ── Renders ───────────────────────────────────────────────────────────────────
+function renderStats(){
+  const tot=historial.length, byT=t=>historial.filter(h=>h.tipo===t).length, reg=historial.filter(h=>h.seg&&h.seg.startsWith('Regiones')).length;
+  document.getElementById('stats-grid').innerHTML=[
+    {label:'Total derivados',value:tot,sub:'historial compartido',accent:'var(--blue)'},
+    {label:'Mandatos',value:byT('Mandato'),sub:`Compraventas: ${byT('Compraventa')}`,accent:'var(--cartera)'},
+    {label:'Resciliaciones',value:byT('Resciliacion'),sub:`Transacciones: ${byT('Transaccion')}`,accent:'var(--amber)'},
+    {label:'Regiones',value:reg,sub:'gestiones derivadas',accent:'var(--regiones)'},
+  ].map(c=>`<div class="stat-card" style="--accent:${c.accent}"><div class="stat-label">${c.label}</div><div class="stat-value">${c.value}</div><div class="stat-sub">${c.sub}</div></div>`).join('');
+}
+function renderLive(){
+  const grupos=[{t:'Abogados/as · Cartera',l:equipo.filter(m=>m.seg==='Cartera'&&m.rol==='Abogado/a')},{t:'Coordinadoras · Cartera',l:equipo.filter(m=>m.seg==='Cartera'&&m.rol==='Coordinadora')},{t:'Abogados/as · Masivo',l:equipo.filter(m=>m.seg==='Masivo'&&m.rol==='Abogado/a')},{t:'Coordinadoras · Masivo',l:equipo.filter(m=>m.seg==='Masivo'&&m.rol==='Coordinadora')}];
+  const mx=Math.max(...equipo.map(m=>m.contratos),1);
+  document.getElementById('carga-live').innerHTML=grupos.map(g=>`<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">${g.t}</div>${g.l.map(p=>`<div class="member-row${p.bloqueado?' blocked':''}"><div class="avatar" style="width:26px;height:26px;font-size:10px;background:${p.color.bg};color:${p.color.tx}">${ini(p.nombre)}</div><div class="member-info"><div class="member-name" style="font-size:12px">${p.nombre.split(' ')[0]}${p.bloqueado?' 🔒':''}</div></div><div class="bar-wrap" style="width:70px"><div class="bar-fill" style="width:${p.bloqueado?0:Math.round(p.contratos/mx*100)}%;background:${p.color.tx}"></div></div><div class="count">${p.contratos}</div></div>`).join('')}</div>`).join('');
+}
+function renderEquipo(){
+  const grupos=[{t:'Abogados/as · Cartera',l:equipo.filter(m=>m.seg==='Cartera'&&m.rol==='Abogado/a')},{t:'Coordinadoras · Cartera',l:equipo.filter(m=>m.seg==='Cartera'&&m.rol==='Coordinadora')},{t:'Abogados/as · Masivo',l:equipo.filter(m=>m.seg==='Masivo'&&m.rol==='Abogado/a')},{t:'Coordinadoras · Masivo',l:equipo.filter(m=>m.seg==='Masivo'&&m.rol==='Coordinadora')}];
+  const mx=Math.max(...equipo.map(m=>m.contratos),1);
+  document.getElementById('team-grid').innerHTML=grupos.map(g=>`<div class="card"><div class="card-body" style="padding:16px"><div class="section-title">${g.t}</div>${g.l.map(p=>`<div class="member-row${p.bloqueado?' blocked':''}"><div class="avatar" style="width:30px;height:30px;font-size:11px;background:${p.color.bg};color:${p.color.tx}">${ini(p.nombre)}</div><div class="member-info"><div class="member-name">${p.nombre}${p.esRegiones?` <span style="font-size:10px;color:var(--regiones);margin-left:4px">Regiones</span>`:''}</div><div class="member-role">${p.rol}</div></div>${p.bloqueado?'<span class="blocked-badge">BLOQ</span>':''}<div class="bar-wrap" style="width:65px"><div class="bar-fill" style="width:${p.bloqueado?0:Math.round(p.contratos/mx*100)}%;background:${p.color.tx}"></div></div><div class="count">${p.contratos}</div></div>`).join('')}</div></div>`).join('');
+}
+function renderHist(){
+  const el=document.getElementById('hist-list');
+  if(!historial.length){el.innerHTML='<div class="empty-state">Sin derivaciones aún.</div>';return;}
+  el.innerHTML=historial.map((h,i)=>{
+    const segKey=h.seg&&h.seg.toLowerCase().startsWith('regiones')?'regiones':h.seg.toLowerCase();
+    return`<div class="hist-item"><div class="hist-num">#${historial.length-i}</div><div><div class="hist-ref">${h.tipo}${h.ref?' · '+h.ref:''}</div><div class="hist-pair">${h.abogado} + ${h.coord}</div>${h.derivadoPor?`<div class="hist-by">por ${h.derivadoPor}</div>`:''} ${h.sucursal?`<div class="hist-sucursal">${h.sucursal}</div>`:''}</div><div class="hist-meta"><div class="hist-date">${h.fecha}</div><div class="hist-chips"><span class="chip chip-${segKey}">${h.seg}</span><span class="chip chip-${h.prio.toLowerCase()}">${h.prio}</span>${(h.redistAbogado||h.redistCoord)?'<span class="chip chip-redistribuido">Redistribuido</span>':''}</div></div></div>`;
+  }).join('');
+}
+window.exportCSV=function(){
+  if(!historial.length){alert('No hay derivaciones para exportar.');return;}
+  const rows=[['#','Fecha','Tipo','Segmento','Sucursal','Prioridad','Abogado/a','Coordinadora','Derivado por','Referencia','Plazo 3d','Plazo 15d']];
+  historial.forEach((h,i)=>rows.push([historial.length-i,h.fecha,h.tipo,h.seg,h.sucursal||'',h.prio,h.abogado,h.coord,h.derivadoPor||'',h.ref||'',h.plazo3||'',h.plazo15||'']));
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download=`derivaciones_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+};
+function refreshEnviarASelect(){
+  const sel=document.getElementById('f-enviar-a'), cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar —</option>'+destinatarios.map(d=>`<option${d===cur?' selected':''}>${d}</option>`).join('');
+}
+
+document.getElementById('top-date').textContent=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+await initData();
+startRealtime();
+</script>
+</body>
+</html>

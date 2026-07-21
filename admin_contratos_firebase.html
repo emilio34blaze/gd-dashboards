@@ -220,6 +220,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
                 <option value="Compraventa">Compraventa</option>
                 <option value="Resciliacion">Resciliación</option>
                 <option value="Transaccion">Transacción</option>
+                <option value="ConstituccionSPA">Constitución de SPA</option>
+                <option value="SPBLSC">SPBLSC</option>
+                <option value="CSPRAR">CSP + RAR</option>
               </select>
             </div>
             <div class="form-group">
@@ -250,6 +253,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="extra-field" id="ef-honorarios">
             <label class="form-label">Devolución de honorarios ($)</label>
             <input type="text" class="form-control" id="f-honorarios" placeholder="Monto a devolver..." oninput="rebuildPreview()">
+          </div>
+          <div class="extra-field" id="ef-ubicado-spblsc">
+            <label class="form-label">Inmueble ubicado en</label>
+            <input type="text" class="form-control" id="f-ubicado-spblsc" placeholder="Dirección del inmueble..." oninput="rebuildPreview()">
+          </div>
+          <div class="extra-field" id="ef-fecha-csprar">
+            <label class="form-label">Fecha de transferencia del inmueble</label>
+            <input type="text" class="form-control" id="f-fecha-csprar" placeholder="Ej: 15 de marzo de 2024..." oninput="rebuildPreview()">
           </div>
           <div class="form-group">
             <label class="form-label">Segmento</label>
@@ -506,10 +517,18 @@ function startRealtime(){
 }
 
 // ── Tipo de contrato ──────────────────────────────────────────────────────────
-const TIPO_FIELDS={Mandato:['ef-enviar-a'],Compraventa:['ef-ubicado'],Resciliacion:['ef-fecha-inmueble'],Transaccion:['ef-honorarios']};
+const TIPO_FIELDS={
+  Mandato:['ef-enviar-a'],
+  Compraventa:['ef-ubicado'],
+  Resciliacion:['ef-fecha-inmueble'],
+  Transaccion:['ef-honorarios'],
+  ConstituccionSPA:[],
+  SPBLSC:['ef-ubicado-spblsc'],
+  CSPRAR:['ef-fecha-csprar'],
+};
 window.onTipoChange=function(){
   const tipo=document.getElementById('f-tipo').value;
-  ['ef-enviar-a','ef-ubicado','ef-fecha-inmueble','ef-honorarios'].forEach(id=>{
+  ['ef-enviar-a','ef-ubicado','ef-fecha-inmueble','ef-honorarios','ef-ubicado-spblsc','ef-fecha-csprar'].forEach(id=>{
     const el=document.getElementById(id);
     el.className='extra-field'+((TIPO_FIELDS[tipo]||[]).includes(id)?' visible':'');
   });
@@ -557,18 +576,22 @@ function refreshManualSelects(){
 
 // ── Borrador ──────────────────────────────────────────────────────────────────
 function buildBody(tipo,ab,co,params){
-  const{enviarA,ubicado,fechaInmueble,honorarios,plazo3,plazo15,fatal}=params;
+  const{enviarA,ubicado,fechaInmueble,honorarios,plazo3,plazo15,fatal,ubicadoSpblsc,fechaCsprar}=params;
   const dest=enviarA||'____________', ubic=ubicado||'____________', fInm=fechaInmueble||'____________', hon=honorarios||'$____________';
+  const ubSpblsc=ubicadoSpblsc||'____________', fCsprar=fechaCsprar||'________________';
   if(tipo==='Mandato')return`${ab}:\n• Redactar Mandato judicial de cliente a MEV. Cuando lo tengamos enviar a ${dest}\n\n${co}, agregar a tareas de Legal por favor.\n\nPlazo: ${plazo3} / Plazo FATAL: ${fatal||'[Por definir]'}`;
   if(tipo==='Compraventa')return`${ab}, redactar lo siguiente:\n• CVI de cliente a ZZZ (ubicado en ${ubic})\n\n${co}, agregar a tareas de CT por favor.\n\nLlamada: ${plazo3}\nControl: ${plazo15}`;
   if(tipo==='Resciliacion')return`${ab}, redactar lo siguiente:\n• Resciliación o CVI de 3° a cliente, respecto de inmueble que transferimos el ${fInm}\n\n${co}, agregar a Tareas por favor.\n\nLlamada: ${plazo3}\nControl: ${plazo15}`;
   if(tipo==='Transaccion')return`${ab}, redactar lo siguiente:\n• Transacción entre cliente y MEV, respecto del servicio de renegociación extra judicial (usar Modelo que usamos para eso)\nAdemás agregar una cláusula que renunciamos a cualquier patrocinio y poder que pudiéremos tener.\nDevolución de honorarios es total, por ${hon}\nPreviamente enviar borrador a MEV y a mi.\n\n${co}, agregar a Tareas.\n\nPlazo: ${plazo3}`;
+  if(tipo==='ConstituccionSPA')return`${ab}, redactar lo siguiente:\n• Constitución de Sociedad (SpA) aportando inmueble como capital\n\n${co}, agregar a Tareas por favor.\n\nLlamada: ${plazo3}\nControl: ${plazo15}`;
+  if(tipo==='SPBLSC')return`${ab}, redactar lo siguiente:\n• SPBLSC adjudicando inmueble a cónyuge no deudor (Respecto a inmueble ubicado en ${ubSpblsc})\n\n${co}, agregar a Tareas por favor.\n\nLlamada: ${plazo3}\nControl: ${plazo15}`;
+  if(tipo==='CSPRAR')return`${ab}, redactar lo siguiente:\n• Cancelación de Saldo de Precio mas Renuncia Acción Resolutoria, respecto de inmueble que transferimos el ${fCsprar}\n\n${co}, agregar a Tareas por favor.\n\nLlamada: ${plazo3}\nControl: ${plazo15}`;
   return '';
 }
 function buildDatesHTML(tipo,hoy){
   const p3=fmtDate(addHabil(hoy,3)), p15=fmtDate(addHabil(hoy,15)), p3v=fmtDateInput(addHabil(hoy,3));
   if(tipo==='Mandato')return{html:`<div class="date-box"><div class="date-box-label">Plazo (3 días hábiles)</div><div class="date-box-val">${p3}</div></div><div class="date-box date-box-input"><div class="date-box-label">Plazo FATAL</div><input type="date" id="d-fatal" value="${p3v}" onchange="rebuildPreview()"></div>`,cols:'one',p3,p15};
-  if(tipo==='Compraventa'||tipo==='Resciliacion')return{html:`<div class="date-box"><div class="date-box-label">Llamada (3 días hábiles)</div><div class="date-box-val">${p3}</div></div><div class="date-box"><div class="date-box-label">Control (15 días hábiles)</div><div class="date-box-val">${p15}</div></div>`,cols:'one',p3,p15};
+  if(tipo==='Compraventa'||tipo==='Resciliacion'||tipo==='ConstituccionSPA'||tipo==='SPBLSC'||tipo==='CSPRAR')return{html:`<div class="date-box"><div class="date-box-label">Llamada (3 días hábiles)</div><div class="date-box-val">${p3}</div></div><div class="date-box"><div class="date-box-label">Control (15 días hábiles)</div><div class="date-box-val">${p15}</div></div>`,cols:'one',p3,p15};
   if(tipo==='Transaccion')return{html:`<div class="date-box"><div class="date-box-label">Plazo (3 días hábiles)</div><div class="date-box-val">${p3}</div></div>`,cols:'one',p3,p15};
   return{html:'',cols:'one',p3,p15};
 }
@@ -578,6 +601,8 @@ function getParams(tipo,dates){
     ubicado:document.getElementById('f-ubicado').value.trim(),
     fechaInmueble:document.getElementById('f-fecha-inmueble').value.trim(),
     honorarios:document.getElementById('f-honorarios').value.trim(),
+    ubicadoSpblsc:document.getElementById('f-ubicado-spblsc').value.trim(),
+    fechaCsprar:document.getElementById('f-fecha-csprar').value.trim(),
     plazo3:dates.p3, plazo15:dates.p15,
     fatal:(()=>{const el=document.getElementById('d-fatal');if(!el)return'';const v=el.value;return v?new Date(v+'T12:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'}):''})(),
   };
@@ -643,6 +668,8 @@ window.asignar=async function(){
     ubicado:document.getElementById('f-ubicado').value.trim(),
     fechaInmueble:document.getElementById('f-fecha-inmueble').value.trim(),
     honorarios:document.getElementById('f-honorarios').value.trim(),
+    ubicadoSpblsc:document.getElementById('f-ubicado-spblsc').value.trim(),
+    fechaCsprar:document.getElementById('f-fecha-csprar').value.trim(),
   };
   // esManual solo queda en el registro interno, no aparece en el correo
   const e={abogado:ab.nombre,coord:co.nombre,tipo,seg:segLabel,prio,ref:ref2,sucursal,fecha:now(),correoAb:ab.correo,correoCo:co.correo,plazo3:datesInfo.p3,plazo15:datesInfo.p15,redistAbogado:redistAb,redistCoord:redistCo,asignacionManual:esManual,...extras};

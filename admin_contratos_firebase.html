@@ -101,6 +101,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .copy-btn{margin-left:auto;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s}
 .copy-btn:hover{border-color:var(--blue);color:var(--blue)}
 .warn-box{display:none;background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:var(--amber);line-height:1.5}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px}
+.mode-btn{padding:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--bg3);color:var(--text3);transition:all .15s;text-align:center}
+.mode-btn.active-auto{background:var(--blue-dim);color:var(--blue)}
+.mode-btn.active-manual{background:#1a1040;color:#c084fc}
+.manual-fields{display:none;background:#1a1040;border:1px solid #7c3aed;border-radius:8px;padding:12px 14px;margin-bottom:14px;animation:fi .2s ease}
+.manual-fields.visible{display:block}
+.manual-fields .form-label{color:#c084fc}
+.manual-fields .form-control{border-color:#3b1d8a}
+.manual-fields .form-control:focus{border-color:#7c3aed}
+.chip-manual{background:#1a1040;color:#c084fc;font-size:9px}
 .info-box{display:none;background:#0d2d3d;border:1px solid #38bdf8;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:#7dd3fc;line-height:1.5}
 .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .section-title{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
@@ -254,6 +264,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <button class="subseg-btn"    id="subbtn-m" onclick="selSubseg('Masivo')">Masivo</button>
             </div>
           </div>
+          <!-- Modo automático / manual -->
+          <div class="form-group">
+            <label class="form-label">Modo de asignación</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active-auto" id="mode-auto" onclick="setModo('auto')">⚡ Automático</button>
+              <button class="mode-btn" id="mode-manual" onclick="setModo('manual')">✋ Manual</button>
+            </div>
+          </div>
+
+          <!-- Selectores manuales -->
+          <div class="manual-fields" id="manual-fields">
+            <div class="form-group" style="margin-bottom:10px">
+              <label class="form-label">Abogado/a</label>
+              <select class="form-control" id="f-manual-ab"><option value="">— Seleccionar —</option></select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Coordinadora</label>
+              <select class="form-control" id="f-manual-co"><option value="">— Seleccionar —</option></select>
+            </div>
+          </div>
+
           <div class="warn-box" id="warn-fernando">Fernando Zagal está bloqueado.</div>
           <div class="info-box" id="info-redist"></div>
           <div class="form-row">
@@ -286,7 +317,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               </button>
             </div>
             <div class="result-meta">
-              <span id="r-ref"></span><span id="r-cseg"></span><span id="r-cprio"></span><span id="r-csuc"></span><span id="r-credist"></span>
+              <span id="r-ref"></span><span id="r-cseg"></span><span id="r-cprio"></span><span id="r-csuc"></span><span id="r-credist"></span><span id="r-cmanual"></span>
               <button class="copy-btn" onclick="copiar()">Copiar texto</button>
             </div>
           </div>
@@ -504,6 +535,26 @@ function checkWarns(){
   document.getElementById('warn-fernando').style.display=(segActual==='Regiones'&&f&&f.bloqueado)?'block':'none';
 }
 
+// ── Modo asignación ───────────────────────────────────────────────────────────
+let modoActual='auto';
+window.setModo=function(m){
+  modoActual=m;
+  document.getElementById('mode-auto').className='mode-btn'+(m==='auto'?' active-auto':'');
+  document.getElementById('mode-manual').className='mode-btn'+(m==='manual'?' active-manual':'');
+  document.getElementById('manual-fields').className='manual-fields'+(m==='manual'?' visible':'');
+  document.getElementById('btn-asignar').textContent=m==='manual'?'Asignar manualmente':'Distribuir en pareja';
+  if(m==='manual') refreshManualSelects();
+};
+function refreshManualSelects(){
+  const abSel=document.getElementById('f-manual-ab');
+  const coSel=document.getElementById('f-manual-co');
+  const curAb=abSel.value, curCo=coSel.value;
+  const abogados=equipo.filter(m=>m.rol==='Abogado/a');
+  const coords=equipo.filter(m=>m.rol==='Coordinadora');
+  abSel.innerHTML='<option value="">— Seleccionar abogado/a —</option>'+abogados.map(m=>`<option value="${m.nombre}"${m.nombre===curAb?' selected':''}>${m.nombre} · ${m.seg}${m.bloqueado?' 🔒':''} (${m.contratos})</option>`).join('');
+  coSel.innerHTML='<option value="">— Seleccionar coordinadora —</option>'+coords.map(m=>`<option value="${m.nombre}"${m.nombre===curCo?' selected':''}>${m.nombre} · ${m.seg}${m.bloqueado?' 🔒':''} (${m.contratos})</option>`).join('');
+}
+
 // ── Borrador ──────────────────────────────────────────────────────────────────
 function buildBody(tipo,ab,co,params){
   const{enviarA,ubicado,fechaInmueble,honorarios,plazo3,plazo15,fatal}=params;
@@ -552,20 +603,33 @@ window.asignar=async function(){
   const ref2=document.getElementById('f-ref').value.trim();
   const prio=document.getElementById('f-prio').value;
   const sucursal=document.getElementById('f-sucursal').value;
+  const esManual=modoActual==='manual';
   let ab=null,co=null,segLabel=segActual,redistAb=false,redistCo=false;
 
-  if(segActual==='Regiones'){
-    const f=getFernando(); if(!f||f.bloqueado){alert('Fernando Zagal está bloqueado.');return;}
-    ab=f;
-    const coRes=pickPerson(equipo.filter(m=>m.seg===subsegActual&&m.rol==='Coordinadora'),'Coordinadora');
-    if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
-    co=coRes.persona; redistCo=coRes.redistribuido; segLabel='Regiones · '+subsegActual;
+  if(esManual){
+    // Modo manual — el admin elige
+    const abNom=document.getElementById('f-manual-ab').value;
+    const coNom=document.getElementById('f-manual-co').value;
+    if(!abNom||!coNom){alert('Selecciona abogado/a y coordinadora.');return;}
+    ab=equipo.find(m=>m.nombre===abNom);
+    co=equipo.find(m=>m.nombre===coNom);
+    if(!ab||!co){alert('No se encontró alguno de los integrantes.');return;}
+    segLabel=ab.seg;
   } else {
-    const abRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Abogado/a'));
-    const coRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Coordinadora'),'Coordinadora');
-    if(!abRes.persona){alert('No hay abogados/as disponibles.');return;}
-    if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
-    ab=abRes.persona; redistAb=abRes.redistribuido; co=coRes.persona; redistCo=coRes.redistribuido;
+    // Modo automático
+    if(segActual==='Regiones'){
+      const f=getFernando(); if(!f||f.bloqueado){alert('Fernando Zagal está bloqueado.');return;}
+      ab=f;
+      const coRes=pickPerson(equipo.filter(m=>m.seg===subsegActual&&m.rol==='Coordinadora'),'Coordinadora');
+      if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
+      co=coRes.persona; redistCo=coRes.redistribuido; segLabel='Regiones · '+subsegActual;
+    } else {
+      const abRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Abogado/a'));
+      const coRes=pickPerson(equipo.filter(m=>m.seg===segActual&&m.rol==='Coordinadora'),'Coordinadora');
+      if(!abRes.persona){alert('No hay abogados/as disponibles.');return;}
+      if(!coRes.persona){alert('No hay coordinadoras disponibles.');return;}
+      ab=abRes.persona; redistAb=abRes.redistribuido; co=coRes.persona; redistCo=coRes.redistribuido;
+    }
   }
 
   const btn=document.getElementById('btn-asignar');
@@ -580,22 +644,24 @@ window.asignar=async function(){
     fechaInmueble:document.getElementById('f-fecha-inmueble').value.trim(),
     honorarios:document.getElementById('f-honorarios').value.trim(),
   };
-  const e={abogado:ab.nombre,coord:co.nombre,tipo,seg:segLabel,prio,ref:ref2,sucursal,fecha:now(),correoAb:ab.correo,correoCo:co.correo,plazo3:datesInfo.p3,plazo15:datesInfo.p15,redistAbogado:redistAb,redistCoord:redistCo,...extras};
+  // esManual solo queda en el registro interno, no aparece en el correo
+  const e={abogado:ab.nombre,coord:co.nombre,tipo,seg:segLabel,prio,ref:ref2,sucursal,fecha:now(),correoAb:ab.correo,correoCo:co.correo,plazo3:datesInfo.p3,plazo15:datesInfo.p15,redistAbogado:redistAb,redistCoord:redistCo,asignacionManual:esManual,...extras};
   historial.unshift(e); lastEntry=e;
 
   try{ await save(); }catch(err){ console.error(err); }
-  btn.disabled=false; btn.textContent='Distribuir en pareja';
+  btn.disabled=false; btn.textContent=esManual?'Asignar manualmente':'Distribuir en pareja';
 
   document.getElementById('r-ab').textContent=ab.nombre;
   document.getElementById('r-ab-c').textContent=ab.contratos+' contratos en total'+(redistAb?' · redistribuido':'');
   document.getElementById('r-co').textContent=co.nombre;
   document.getElementById('r-co-c').textContent=co.contratos+' contratos en total'+(redistCo?' · redistribuido':'');
   document.getElementById('r-ref').textContent=ref2||'Sin referencia';
-  const segKey=segActual==='Regiones'?'regiones':segActual.toLowerCase();
+  const segKey=segLabel.toLowerCase().startsWith('regiones')?'regiones':segLabel.toLowerCase();
   document.getElementById('r-cseg').innerHTML=`<span class="chip chip-${segKey}">${segLabel}</span>`;
   document.getElementById('r-cprio').innerHTML=`<span class="chip chip-${prio.toLowerCase()}">${prio}</span>`;
   document.getElementById('r-csuc').innerHTML=sucursal?`<span class="chip chip-sucursal">${sucursal}</span>`:'';
   document.getElementById('r-credist').innerHTML=(redistAb||redistCo)?'<span class="chip chip-redistribuido">Redistribuido</span>':'';
+  document.getElementById('r-cmanual').innerHTML=esManual?'<span class="chip chip-manual">✋ manual</span>':'';
 
   const datesWrap=document.getElementById('d-dates-wrap');
   datesWrap.className='draft-dates '+datesInfo.cols;
@@ -607,6 +673,7 @@ window.asignar=async function(){
   document.getElementById('result-box').style.display='block';
   document.getElementById('f-ref').value='';
   renderStats(); renderLive();
+  if(esManual) refreshManualSelects();
 };
 
 window.abrirBorrador=function(){
@@ -685,7 +752,7 @@ function renderHist(){
   if(!historial.length){el.innerHTML='<div class="empty-state">Sin asignaciones aún.</div>';return;}
   el.innerHTML=historial.map((h,i)=>{
     const segKey=h.seg&&h.seg.toLowerCase().startsWith('regiones')?'regiones':h.seg.toLowerCase();
-    return`<div class="hist-item"><div class="hist-num">#${historial.length-i}</div><div><div class="hist-ref">${h.tipo}${h.ref?' · '+h.ref:''}</div><div class="hist-pair">${h.abogado} + ${h.coord}</div>${h.sucursal?`<div class="hist-sucursal">${h.sucursal}</div>`:''}</div><div class="hist-meta"><div class="hist-date">${h.fecha}</div><div class="hist-chips"><span class="chip chip-${segKey}">${h.seg}</span><span class="chip chip-${h.prio.toLowerCase()}">${h.prio}</span>${(h.redistAbogado||h.redistCoord)?'<span class="chip chip-redistribuido">Redistribuido</span>':''}</div></div></div>`;
+    return`<div class="hist-item"><div class="hist-num">#${historial.length-i}</div><div><div class="hist-ref">${h.tipo}${h.ref?' · '+h.ref:''}</div><div class="hist-pair">${h.abogado} + ${h.coord}</div>${h.sucursal?`<div class="hist-sucursal">${h.sucursal}</div>`:''}</div><div class="hist-meta"><div class="hist-date">${h.fecha}</div><div class="hist-chips"><span class="chip chip-${segKey}">${h.seg}</span><span class="chip chip-${h.prio.toLowerCase()}">${h.prio}</span>${(h.redistAbogado||h.redistCoord)?'<span class="chip chip-redistribuido">Redistribuido</span>':''}${h.asignacionManual?'<span class="chip chip-manual">✋ manual</span>':''}</div></div></div>`;
   }).join('');
 }
 
